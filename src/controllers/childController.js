@@ -270,6 +270,120 @@ const deleteChild = async (req, res) => {
   }
 };
 
+// @desc    Transfer child to another class
+// @route   PUT /api/children/:id/transfer-class
+// @access  Private (Teacher/Admin)
+const transferClass = async (req, res) => {
+  try {
+    const { newClassId } = req.body;
+
+    if (!newClassId) {
+      return res.status(400).json({ message: 'New class ID is required' });
+    }
+
+    const child = await Child.findById(req.params.id);
+
+    if (!child) {
+      return res.status(404).json({ message: 'Child not found' });
+    }
+
+    const oldClassId = child.class;
+    child.class = newClassId;
+    await child.save();
+
+    const updatedChild = await Child.findById(child._id)
+      .populate('class', 'name')
+      .populate('groups', 'name')
+      .populate('parent', 'firstName lastName phoneNumber');
+
+    res.json({
+      message: 'Child transferred to new class successfully',
+      child: updatedChild,
+      previousClass: oldClassId
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Add child to a group
+// @route   PUT /api/children/:id/join-group
+// @access  Private (Teacher/Admin)
+const joinGroup = async (req, res) => {
+  try {
+    const { groupId } = req.body;
+
+    if (!groupId) {
+      return res.status(400).json({ message: 'Group ID is required' });
+    }
+
+    const child = await Child.findById(req.params.id);
+
+    if (!child) {
+      return res.status(404).json({ message: 'Child not found' });
+    }
+
+    // Check if already in the group
+    if (child.groups.includes(groupId)) {
+      return res.status(400).json({ message: 'Child is already in this group' });
+    }
+
+    child.groups.push(groupId);
+    await child.save();
+
+    const updatedChild = await Child.findById(child._id)
+      .populate('class', 'name')
+      .populate('groups', 'name')
+      .populate('parent', 'firstName lastName phoneNumber');
+
+    res.json({
+      message: 'Child added to group successfully',
+      child: updatedChild
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Remove child from a group
+// @route   PUT /api/children/:id/leave-group
+// @access  Private (Teacher/Admin)
+const leaveGroup = async (req, res) => {
+  try {
+    const { groupId } = req.body;
+
+    if (!groupId) {
+      return res.status(400).json({ message: 'Group ID is required' });
+    }
+
+    const child = await Child.findById(req.params.id);
+
+    if (!child) {
+      return res.status(404).json({ message: 'Child not found' });
+    }
+
+    // Check if in the group
+    if (!child.groups.includes(groupId)) {
+      return res.status(400).json({ message: 'Child is not in this group' });
+    }
+
+    child.groups = child.groups.filter(g => g.toString() !== groupId);
+    await child.save();
+
+    const updatedChild = await Child.findById(child._id)
+      .populate('class', 'name')
+      .populate('groups', 'name')
+      .populate('parent', 'firstName lastName phoneNumber');
+
+    res.json({
+      message: 'Child removed from group successfully',
+      child: updatedChild
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 module.exports = {
   registerChild,
   getAllChildren,
@@ -279,5 +393,8 @@ module.exports = {
   uploadPhoto,
   getChildrenByClass,
   getChildrenByGroup,
-  deleteChild
+  deleteChild,
+  transferClass,
+  joinGroup,
+  leaveGroup
 };

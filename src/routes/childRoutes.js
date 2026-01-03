@@ -12,7 +12,10 @@ const {
   uploadPhoto,
   getChildrenByClass,
   getChildrenByGroup,
-  deleteChild
+  deleteChild,
+  transferClass,
+  joinGroup,
+  leaveGroup
 } = require('../controllers/childController');
 
 // Validation rules
@@ -39,5 +42,8 @@ router.route('/:id')
   .delete(protect, authorize('admin'), deleteChild);
 
 router.post('/:id/photo', protect, upload.single('photo'), uploadPhoto);
+router.put('/:id/transfer-class', protect, authorize('teacher', 'admin'), transferClass);
+router.put('/:id/join-group', protect, authorize('teacher', 'admin'), joinGroup);
+router.put('/:id/leave-group', protect, authorize('teacher', 'admin'), leaveGroup);
 
 module.exports = router;
